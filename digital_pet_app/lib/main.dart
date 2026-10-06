@@ -64,6 +64,42 @@ class _DigitalPetScreenState extends State<DigitalPetScreen> {
   /// Keeps every meter inside 0–100.
   int _clampMeter(int value) => value.clamp(0, 100).toInt();
 
+  /// Care actions are locked once the game has a final outcome.
+  bool get _canCare => !_gameOver && !_hasWon;
+
+  /// Feed: hunger -10. Happiness +10, unless the pet ends up overfed
+  /// (hunger below 30), which costs 20 happiness instead.
+  void _feedPet() {
+    if (!_canCare) return;
+
+    final nextHunger = _clampMeter(_hunger - 10);
+    final happinessChange = nextHunger < 30 ? -20 : 10;
+    final nextHappiness = _clampMeter(_happiness + happinessChange);
+
+    setState(() {
+      _hunger = nextHunger;
+      _happiness = nextHappiness;
+    });
+    _updateOutcome();
+  }
+
+  /// Play: happiness +10, hunger +5.
+  void _playWithPet() {
+    if (!_canCare) return;
+
+    final nextHappiness = _clampMeter(_happiness + 10);
+    final nextHunger = _clampMeter(_hunger + 5);
+
+    setState(() {
+      _happiness = nextHappiness;
+      _hunger = nextHunger;
+    });
+    _updateOutcome();
+  }
+
+  /// Re-checks win/loss after every state change. Filled in at Step 8.
+  void _updateOutcome() {}
+
   // Mood is derived from happiness, never stored separately.
   // Above 70 = happy, 30–70 = neutral, below 30 = unhappy.
   String get _moodLabel {
@@ -119,6 +155,8 @@ class _DigitalPetScreenState extends State<DigitalPetScreen> {
                 value: _hunger,
                 color: Colors.orange,
               ),
+              const SizedBox(height: 24),
+              _buildCareActions(),
               const SizedBox(height: 16),
               _buildOutcomeStatus(context),
             ],
@@ -227,6 +265,27 @@ class _DigitalPetScreenState extends State<DigitalPetScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  /// Feed and Play buttons; disabled (onPressed: null) after an outcome.
+  Widget _buildCareActions() {
+    return Wrap(
+      alignment: WrapAlignment.center,
+      spacing: 12,
+      runSpacing: 8,
+      children: [
+        FilledButton.icon(
+          onPressed: _canCare ? _feedPet : null,
+          icon: const Icon(Icons.restaurant),
+          label: const Text('Feed'),
+        ),
+        FilledButton.icon(
+          onPressed: _canCare ? _playWithPet : null,
+          icon: const Icon(Icons.sports_baseball),
+          label: const Text('Play'),
+        ),
+      ],
     );
   }
 
