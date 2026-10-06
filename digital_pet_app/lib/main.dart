@@ -33,6 +33,11 @@ class _DigitalPetScreenState extends State<DigitalPetScreen> {
   static const String initialName = 'Pip';
   static const int initialHappiness = 50;
   static const int initialHunger = 50;
+  static const int initialEnergy = 70;
+
+  // Energy rules (advanced feature).
+  static const int playEnergyCost = 15;
+  static const int restEnergyGain = 25;
 
   // How often hunger grows. Shorten (e.g. 5 seconds) only while testing by
   // hand; it must be 30 seconds for submission.
@@ -47,6 +52,7 @@ class _DigitalPetScreenState extends State<DigitalPetScreen> {
   String _petName = initialName;
   int _happiness = initialHappiness;
   int _hunger = initialHunger;
+  int _energy = initialEnergy;
   bool _gameOver = false;
   bool _hasWon = false;
 
@@ -81,7 +87,7 @@ class _DigitalPetScreenState extends State<DigitalPetScreen> {
 
   /// Hunger +5 per tick. A tick that reaches 100 (e.g. 95 -> 100) costs
   /// nothing extra; once hunger is already maxed, each further tick keeps it
-  /// at 100 and costs 20 happiness instead.
+  /// at 100 and costs 20 happiness instead. Energy slowly recovers +5.
   void _onHungerTick() {
     if (!mounted) return;
     if (!_canCare) {
@@ -96,6 +102,7 @@ class _DigitalPetScreenState extends State<DigitalPetScreen> {
       } else {
         _hunger += 5;
       }
+      _energy = _clampMeter(_energy + 5);
     });
     _updateOutcome();
   }
@@ -119,31 +126,52 @@ class _DigitalPetScreenState extends State<DigitalPetScreen> {
   /// Care actions are locked once the game has a final outcome.
   bool get _canCare => !_gameOver && !_hasWon;
 
-  /// Feed: hunger -10. Happiness +10, unless the pet ends up overfed
-  /// (hunger below 30), which costs 20 happiness instead.
+  /// Playing also needs enough energy.
+  bool get _canPlay => _canCare && _energy >= playEnergyCost;
+
+  /// Feed: hunger -10, energy +5. Happiness +10, unless the pet ends up
+  /// overfed (hunger below 30), which costs 20 happiness instead.
   void _feedPet() {
     if (!_canCare) return;
 
     final nextHunger = _clampMeter(_hunger - 10);
     final happinessChange = nextHunger < 30 ? -20 : 10;
     final nextHappiness = _clampMeter(_happiness + happinessChange);
+    final nextEnergy = _clampMeter(_energy + 5);
 
     setState(() {
       _hunger = nextHunger;
       _happiness = nextHappiness;
+      _energy = nextEnergy;
     });
     _updateOutcome();
   }
 
-  /// Play: happiness +10, hunger +5.
+  /// Play: happiness +10, hunger +5, energy -15. Blocked when too tired.
   void _playWithPet() {
-    if (!_canCare) return;
+    if (!_canPlay) return;
 
     final nextHappiness = _clampMeter(_happiness + 10);
     final nextHunger = _clampMeter(_hunger + 5);
+    final nextEnergy = _clampMeter(_energy - playEnergyCost);
 
     setState(() {
       _happiness = nextHappiness;
+      _hunger = nextHunger;
+      _energy = nextEnergy;
+    });
+    _updateOutcome();
+  }
+
+  /// Rest: energy +25, hunger +5 (resting still makes the pet hungry).
+  void _restPet() {
+    if (!_canCare) return;
+
+    final nextEnergy = _clampMeter(_energy + restEnergyGain);
+    final nextHunger = _clampMeter(_hunger + 5);
+
+    setState(() {
+      _energy = nextEnergy;
       _hunger = nextHunger;
     });
     _updateOutcome();
@@ -187,6 +215,7 @@ class _DigitalPetScreenState extends State<DigitalPetScreen> {
     setState(() {
       _happiness = initialHappiness;
       _hunger = initialHunger;
+      _energy = initialEnergy;
       _gameOver = false;
       _hasWon = false;
     });
@@ -255,6 +284,8 @@ class _DigitalPetScreenState extends State<DigitalPetScreen> {
                 value: _hunger,
                 color: Colors.orange,
               ),
+              const SizedBox(height: 12),
+              _buildMeter(label: 'Energy', value: _energy, color: Colors.blue),
               const SizedBox(height: 24),
               _buildCareActions(),
               const SizedBox(height: 16),
@@ -327,10 +358,7 @@ class _DigitalPetScreenState extends State<DigitalPetScreen> {
           ),
         ),
         const SizedBox(width: 8),
-        FilledButton(
-          onPressed: _confirmName,
-          child: const Text('Confirm'),
-        ),
+        FilledButton(onPressed: _confirmName, child: const Text('Confirm')),
       ],
     );
   }
@@ -350,10 +378,7 @@ class _DigitalPetScreenState extends State<DigitalPetScreen> {
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(label),
-              Text('$shown / 100'),
-            ],
+            children: [Text(label), Text('$shown / 100')],
           ),
           const SizedBox(height: 4),
           LinearProgressIndicator(
@@ -368,29 +393,46 @@ class _DigitalPetScreenState extends State<DigitalPetScreen> {
     );
   }
 
-  /// Feed and Play are disabled (onPressed: null) after an outcome; Reset
-  /// always works.
+  /// Feed, Play and Rest are disabled (onPressed: null) after an outcome;
+  /// Play is also disabled when energy is too low. Reset always works.
   Widget _buildCareActions() {
-    return Wrap(
-      alignment: WrapAlignment.center,
-      spacing: 12,
-      runSpacing: 8,
+    final tooTired = _canCare && !_canPlay;
+    return Column(
       children: [
-        FilledButton.icon(
-          onPressed: _canCare ? _feedPet : null,
-          icon: const Icon(Icons.restaurant),
-          label: const Text('Feed'),
+        Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 12,
+          runSpacing: 8,
+          children: [
+            FilledButton.icon(
+              onPressed: _canCare ? _feedPet : null,
+              icon: const Icon(Icons.restaurant),
+              label: const Text('Feed'),
+            ),
+            FilledButton.icon(
+              onPressed: _canPlay ? _playWithPet : null,
+              icon: const Icon(Icons.sports_baseball),
+              label: const Text('Play'),
+            ),
+            FilledButton.icon(
+              onPressed: _canCare ? _restPet : null,
+              icon: const Icon(Icons.bedtime),
+              label: const Text('Rest'),
+            ),
+            OutlinedButton.icon(
+              onPressed: _resetPet,
+              icon: const Icon(Icons.restart_alt),
+              label: const Text('Reset'),
+            ),
+          ],
         ),
-        FilledButton.icon(
-          onPressed: _canCare ? _playWithPet : null,
-          icon: const Icon(Icons.sports_baseball),
-          label: const Text('Play'),
-        ),
-        OutlinedButton.icon(
-          onPressed: _resetPet,
-          icon: const Icon(Icons.restart_alt),
-          label: const Text('Reset'),
-        ),
+        if (tooTired) ...[
+          const SizedBox(height: 8),
+          Text(
+            '$_petName is too tired to play. Let them rest!',
+            textAlign: TextAlign.center,
+          ),
+        ],
       ],
     );
   }
