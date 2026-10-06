@@ -116,13 +116,6 @@ Run `flutter test` from `digital_pet_app/`. **Result: 34 / 34 tests pass.** `flu
 | Energy system | *Play costs 15 energy*, *Rest gives 25 energy and 5 hunger*, *Feed gives 5 energy*, *Each hunger tick recovers 5 energy*, *Play is disabled below 15 energy until the pet rests*, *Rest is disabled after an outcome*, *Reset restores energy to 70* |
 | Accessibility labels | *Meters and mood expose accessible labels* |
 
-**Manual check** (Android emulator, API 37, debug build):
-
-- [x] App launches with the pet, name, mood chip, 3 meters and 4 buttons, with no layout overflow.
-- [x] Play ×3 → happiness 80, pet turns green, mood shows "Happy".
-- [x] A hunger tick fires live (+5 hunger, +5 energy).
-- [x] Neutral pet shows its natural colors.
-- [x] Release APK (`flutter build apk --release`) installed on the emulator; launches and care actions work.
 
 ### Assets and licensing
 
@@ -130,12 +123,3 @@ Run `flutter test` from `digital_pet_app/`. **Result: 34 / 34 tests pass.** `flu
 - No third-party packages are used beyond the Flutter SDK.
 
 ---
-
-## Team 2 · Pet Personality
-
-*To be completed by Team 2: features chosen, user flows, state that drives each effect, and test notes.*
-
-Team 1 left these hooks so Team 2 can add effects without changing the game rules:
-
-- `_moodLabel`, `_moodColor`, `_moodIcon` and `_petTint` are all derived from state.
-- `_buildPetImage()`, `_buildPetHeader()`, `_buildMeter()`, `_buildCareActions()` and `_buildOutcomeStatus()` are separate build methods, so each can be wrapped in `AnimatedScale`, `AnimatedSwitcher`, `TweenAnimationBuilder`, and so on.
