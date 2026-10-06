@@ -23,6 +23,27 @@ void main() {
     expect(find.text('Status: Playing'), findsOneWidget);
   });
 
+  testWidgets('Confirming a name updates the pet name', (tester) async {
+    await tester.pumpWidget(const DigitalPetApp());
+
+    await tester.enterText(find.byType(TextField), '  Mochi  ');
+    await tester.tap(find.text('Confirm'));
+    await tester.pump();
+
+    expect(find.text('Mochi'), findsOneWidget);
+    expect(find.text('Pip'), findsNothing);
+  });
+
+  testWidgets('Blank name is ignored', (tester) async {
+    await tester.pumpWidget(const DigitalPetApp());
+
+    await tester.enterText(find.byType(TextField), '   ');
+    await tester.tap(find.text('Confirm'));
+    await tester.pump();
+
+    expect(find.text('Pip'), findsOneWidget);
+  });
+
   testWidgets('Meters and mood expose accessible labels', (tester) async {
     final handle = tester.ensureSemantics();
     await tester.pumpWidget(const DigitalPetApp());

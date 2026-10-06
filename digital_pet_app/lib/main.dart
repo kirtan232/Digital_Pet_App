@@ -39,6 +39,28 @@ class _DigitalPetScreenState extends State<DigitalPetScreen> {
   bool _gameOver = false;
   bool _hasWon = false;
 
+  // Owned by this State object, so it must be disposed in dispose().
+  final TextEditingController _nameController = TextEditingController();
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  /// Confirms the typed name. Blank input is ignored so the pet always has a
+  /// name.
+  void _confirmName() {
+    final newName = _nameController.text.trim();
+    if (newName.isEmpty) return;
+
+    setState(() {
+      _petName = newName;
+    });
+    _nameController.clear();
+    FocusScope.of(context).unfocus();
+  }
+
   /// Keeps every meter inside 0–100.
   int _clampMeter(int value) => value.clamp(0, 100).toInt();
 
@@ -83,6 +105,8 @@ class _DigitalPetScreenState extends State<DigitalPetScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _buildPetHeader(context),
+              const SizedBox(height: 16),
+              _buildNameInput(),
               const SizedBox(height: 24),
               _buildMeter(
                 label: 'Happiness',
@@ -119,6 +143,33 @@ class _DigitalPetScreenState extends State<DigitalPetScreen> {
             avatar: Icon(_moodIcon, color: _moodColor),
             label: Text(_moodLabel),
           ),
+        ),
+      ],
+    );
+  }
+
+  /// Text field + confirm button for naming the pet.
+  Widget _buildNameInput() {
+    return Row(
+      children: [
+        Expanded(
+          child: TextField(
+            controller: _nameController,
+            maxLength: 20,
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => _confirmName(),
+            decoration: const InputDecoration(
+              labelText: 'Pet name',
+              hintText: 'Enter a new name',
+              border: OutlineInputBorder(),
+              counterText: '',
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        FilledButton(
+          onPressed: _confirmName,
+          child: const Text('Confirm'),
         ),
       ],
     );
