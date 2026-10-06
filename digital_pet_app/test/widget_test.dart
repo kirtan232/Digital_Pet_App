@@ -23,6 +23,17 @@ void main() {
     expect(find.text('Status: Playing'), findsOneWidget);
   });
 
+  testWidgets('Pet image is tinted with the neutral mood color', (tester) async {
+    await tester.pumpWidget(const DigitalPetApp());
+
+    final filtered = tester.widget<ColorFiltered>(find.byType(ColorFiltered));
+    expect(
+      filtered.colorFilter,
+      const ColorFilter.mode(Colors.yellow, BlendMode.modulate),
+    );
+    expect(find.byType(Image), findsOneWidget);
+  });
+
   testWidgets('Confirming a name updates the pet name', (tester) async {
     await tester.pumpWidget(const DigitalPetApp());
 

@@ -134,6 +134,8 @@ class _DigitalPetScreenState extends State<DigitalPetScreen> {
     final textTheme = Theme.of(context).textTheme;
     return Column(
       children: [
+        _buildPetImage(),
+        const SizedBox(height: 12),
         Text(_petName, style: textTheme.headlineMedium),
         const SizedBox(height: 8),
         Semantics(
@@ -145,6 +147,26 @@ class _DigitalPetScreenState extends State<DigitalPetScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  /// Light grayscale pet image tinted by mood. BlendMode.modulate multiplies
+  /// the image by the mood color, so light areas take the tint and dark
+  /// outlines stay dark.
+  Widget _buildPetImage() {
+    return Semantics(
+      label: '$_petName looks ${_moodLabel.toLowerCase()}',
+      image: true,
+      child: ColorFiltered(
+        colorFilter: ColorFilter.mode(_moodColor, BlendMode.modulate),
+        child: Image.asset(
+          'assets/images/pet.png',
+          width: 180,
+          height: 180,
+          fit: BoxFit.contain,
+          excludeFromSemantics: true,
+        ),
+      ),
     );
   }
 
