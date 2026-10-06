@@ -2,8 +2,8 @@
 
 A Flutter pet-care app that turns user actions and time into visible state changes, built with `StatefulWidget`, `setState()`, and lifecycle-aware timers. Two teams co-build one app in this repository:
 
-- **Team 1 · Care Systems** — care actions, bounded meters, hunger and win timers, outcomes, reset, energy system, state tests.
-- **Team 2 · Pet Personality** — derived pet messages, mood feedback, motion/accessibility polish, interaction tests. *(section below to be completed by Team 2)*
+- Team 1 · Care Systems  care actions, bounded meters, hunger and win timers, outcomes, reset, energy system, state tests.
+- Team 2 · Pet Personality derived pet messages, mood feedback, motion/accessibility polish, interaction tests. *(section below to be completed by Team 2)*
 
 ## Team
 
@@ -41,7 +41,7 @@ All pet state lives in `_DigitalPetScreenState`, which is the single source of t
 | `_happiness` | 50 | 0–100 |
 | `_hunger` | 50 | 0–100 |
 | `_energy` | 70 | 0–100 |
-| `_gameOver` / `_hasWon` | `false` | — |
+| `_gameOver` / `_hasWon` | `false` | - |
 
 Every change goes through `_clampMeter()` so no meter can leave 0–100. Each action works out its new values first and then updates all affected fields together in **one** `setState()` call. `_updateOutcome()` runs after every action and every timer tick.
 
