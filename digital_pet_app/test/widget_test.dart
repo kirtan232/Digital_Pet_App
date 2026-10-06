@@ -9,4 +9,14 @@ void main() {
     expect(find.byType(DigitalPetScreen), findsOneWidget);
     expect(find.text('Digital Pet'), findsOneWidget);
   });
+
+  testWidgets('Pet starts with initial state and neutral mood', (tester) async {
+    await tester.pumpWidget(const DigitalPetApp());
+
+    expect(find.text('Pip'), findsOneWidget);
+    expect(find.text('Mood: Neutral'), findsOneWidget);
+    expect(find.text('Happiness: 50'), findsOneWidget);
+    expect(find.text('Hunger: 50'), findsOneWidget);
+    expect(find.text('Status: Playing'), findsOneWidget);
+  });
 }
