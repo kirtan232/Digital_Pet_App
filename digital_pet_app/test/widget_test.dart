@@ -166,6 +166,83 @@ void main() {
     });
   });
 
+  group('Outcomes', () {
+    Future<void> tap(WidgetTester tester, String label, [int times = 1]) async {
+      for (var i = 0; i < times; i++) {
+        await tester.tap(find.text(label));
+        await tester.pump();
+      }
+    }
+
+    bool isEnabled(WidgetTester tester, String label) {
+      final button = tester.widget<ButtonStyleButton>(find.ancestor(
+        of: find.text(label),
+        matching: find.byWidgetPredicate((w) => w is ButtonStyleButton),
+      ));
+      return button.onPressed != null;
+    }
+
+    testWidgets('Win after 3 minutes above 80, then actions lock',
+        (tester) async {
+      await tester.pumpWidget(const DigitalPetApp());
+      await tap(tester, 'Play', 4); // happiness 90, hunger 70
+
+      await tester.pump(const Duration(minutes: 2, seconds: 59));
+      expect(find.text('Status: Playing'), findsOneWidget);
+
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.text('Status: You won!'), findsOneWidget);
+      expect(find.textContaining('You win!'), findsOneWidget);
+      expect(isEnabled(tester, 'Feed'), isFalse);
+      expect(isEnabled(tester, 'Play'), isFalse);
+    });
+
+    testWidgets('Exactly 80 happiness never starts the win timer',
+        (tester) async {
+      await tester.pumpWidget(const DigitalPetApp());
+      await tap(tester, 'Play', 3); // happiness exactly 80
+
+      await tester.pump(const Duration(minutes: 4));
+      expect(find.text('Status: Playing'), findsOneWidget);
+    });
+
+    testWidgets('Dropping to 80 cancels the countdown; next crossing restarts',
+        (tester) async {
+      await tester.pumpWidget(const DigitalPetApp());
+      await tap(tester, 'Feed', 3); // hunger 20, happiness 50
+      await tap(tester, 'Play', 4); // happiness 90 -> countdown starts at 0s
+
+      await tester.pump(const Duration(minutes: 1)); // hunger 50
+      await tap(tester, 'Feed', 3); // last feed overfeeds: happiness 80
+      expect(find.bySemanticsLabel('Happiness: 80 out of 100'), findsOneWidget);
+
+      await tap(tester, 'Play'); // happiness 90 -> fresh countdown at 60s
+
+      // The cancelled countdown would have finished at 180s.
+      await tester.pump(const Duration(seconds: 150)); // now 210s
+      expect(find.text('Status: Playing'), findsOneWidget);
+
+      await tester.pump(const Duration(seconds: 30)); // now 240s = 60s + 3min
+      expect(find.text('Status: You won!'), findsOneWidget);
+    });
+
+    testWidgets('Loss when hunger is 100 and happiness is 10 or lower',
+        (tester) async {
+      await tester.pumpWidget(const DigitalPetApp());
+
+      // 10 ticks -> hunger 100; 2 more ticks -> happiness 50 -> 30 -> 10.
+      await tester.pump(const Duration(seconds: 30 * 12));
+      expect(find.text('Status: Game over'), findsOneWidget);
+      expect(find.textContaining('Game over.'), findsOneWidget);
+      expect(isEnabled(tester, 'Feed'), isFalse);
+      expect(isEnabled(tester, 'Play'), isFalse);
+
+      // Hunger timer is stopped: more time changes nothing.
+      await tester.pump(const Duration(minutes: 5));
+      expect(find.bySemanticsLabel('Happiness: 10 out of 100'), findsOneWidget);
+    });
+  });
+
   testWidgets('Meters and mood expose accessible labels', (tester) async {
     final handle = tester.ensureSemantics();
     await tester.pumpWidget(const DigitalPetApp());

@@ -38,6 +38,11 @@ class _DigitalPetScreenState extends State<DigitalPetScreen> {
   // hand; it must be 30 seconds for submission.
   static const Duration hungerTickInterval = Duration(seconds: 30);
 
+  // Happiness must stay above winThreshold this long, without dropping, to
+  // win. Shorten only while testing by hand; must be 3 minutes for submission.
+  static const Duration winDuration = Duration(minutes: 3);
+  static const int winThreshold = 80;
+
   // Pet state: the single source of truth for everything the UI shows.
   String _petName = initialName;
   int _happiness = initialHappiness;
@@ -51,6 +56,9 @@ class _DigitalPetScreenState extends State<DigitalPetScreen> {
   // The single periodic hunger timer. Created in initState, never in build.
   Timer? _hungerTimer;
 
+  // One-shot win timer; only exists while happiness is above winThreshold.
+  Timer? _highMoodTimer;
+
   @override
   void initState() {
     super.initState();
@@ -60,6 +68,7 @@ class _DigitalPetScreenState extends State<DigitalPetScreen> {
   @override
   void dispose() {
     _hungerTimer?.cancel();
+    _highMoodTimer?.cancel();
     _nameController.dispose();
     super.dispose();
   }
@@ -140,8 +149,42 @@ class _DigitalPetScreenState extends State<DigitalPetScreen> {
     _updateOutcome();
   }
 
-  /// Re-checks win/loss after every state change. Filled in at Step 8.
-  void _updateOutcome() {}
+  /// Re-checks win/loss. Called after every action and every hunger tick.
+  void _updateOutcome() {
+    if (!_canCare) return;
+
+    // Loss: starving and miserable.
+    if (_hunger == 100 && _happiness <= 10) {
+      _stopAllTimers();
+      setState(() => _gameOver = true);
+      return;
+    }
+
+    // "Above 80" is strict: exactly 80 cancels the win countdown.
+    if (_happiness <= winThreshold) {
+      _highMoodTimer?.cancel();
+      _highMoodTimer = null;
+      return;
+    }
+
+    // First crossing above 80 starts a fresh countdown; staying above keeps
+    // the existing one running (??= does not restart it).
+    _highMoodTimer ??= Timer(winDuration, _onWinTimerDone);
+  }
+
+  void _onWinTimerDone() {
+    _highMoodTimer = null;
+    if (!mounted || !_canCare || _happiness <= winThreshold) return;
+    _stopAllTimers();
+    setState(() => _hasWon = true);
+  }
+
+  void _stopAllTimers() {
+    _hungerTimer?.cancel();
+    _hungerTimer = null;
+    _highMoodTimer?.cancel();
+    _highMoodTimer = null;
+  }
 
   // Mood is derived from happiness, never stored separately.
   // Above 70 = happy, 30–70 = neutral, below 30 = unhappy.
@@ -332,11 +375,50 @@ class _DigitalPetScreenState extends State<DigitalPetScreen> {
     );
   }
 
+  /// Status line, plus a banner explaining the result once the game ends.
   Widget _buildOutcomeStatus(BuildContext context) {
-    return Text(
+    final textTheme = Theme.of(context).textTheme;
+    final status = Text(
       'Status: $_outcomeLabel',
       textAlign: TextAlign.center,
-      style: Theme.of(context).textTheme.titleMedium,
+      style: textTheme.titleMedium,
+    );
+    if (_canCare) return status;
+
+    final won = _hasWon;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        status,
+        const SizedBox(height: 8),
+        Semantics(
+          liveRegion: true,
+          child: Card(
+            color: won ? Colors.green.shade100 : Colors.red.shade100,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Icon(
+                    won ? Icons.emoji_events : Icons.heart_broken,
+                    color: won ? Colors.green.shade800 : Colors.red.shade800,
+                    size: 32,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      won
+                          ? '$_petName stayed happy for 3 minutes. You win!'
+                          : '$_petName got too hungry and sad. Game over.',
+                      style: textTheme.bodyLarge,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
