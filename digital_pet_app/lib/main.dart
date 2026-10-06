@@ -179,6 +179,20 @@ class _DigitalPetScreenState extends State<DigitalPetScreen> {
     setState(() => _hasWon = true);
   }
 
+  /// Restores the starting meters and clears the outcome. The pet keeps its
+  /// name. Old timers are cancelled first, then exactly one fresh hunger
+  /// timer starts; the win timer only restarts on the next crossing above 80.
+  void _resetPet() {
+    _stopAllTimers();
+    setState(() {
+      _happiness = initialHappiness;
+      _hunger = initialHunger;
+      _gameOver = false;
+      _hasWon = false;
+    });
+    _startHungerTimer();
+  }
+
   void _stopAllTimers() {
     _hungerTimer?.cancel();
     _hungerTimer = null;
@@ -354,7 +368,8 @@ class _DigitalPetScreenState extends State<DigitalPetScreen> {
     );
   }
 
-  /// Feed and Play buttons; disabled (onPressed: null) after an outcome.
+  /// Feed and Play are disabled (onPressed: null) after an outcome; Reset
+  /// always works.
   Widget _buildCareActions() {
     return Wrap(
       alignment: WrapAlignment.center,
@@ -370,6 +385,11 @@ class _DigitalPetScreenState extends State<DigitalPetScreen> {
           onPressed: _canCare ? _playWithPet : null,
           icon: const Icon(Icons.sports_baseball),
           label: const Text('Play'),
+        ),
+        OutlinedButton.icon(
+          onPressed: _resetPet,
+          icon: const Icon(Icons.restart_alt),
+          label: const Text('Reset'),
         ),
       ],
     );

@@ -243,6 +243,71 @@ void main() {
     });
   });
 
+  group('Reset', () {
+    Future<void> tap(WidgetTester tester, String label, [int times = 1]) async {
+      for (var i = 0; i < times; i++) {
+        await tester.tap(find.text(label));
+        await tester.pump();
+      }
+    }
+
+    testWidgets('Reset after game over restores meters and unlocks actions',
+        (tester) async {
+      await tester.pumpWidget(const DigitalPetApp());
+      await tester.pump(const Duration(seconds: 30 * 12)); // loss
+      expect(find.text('Status: Game over'), findsOneWidget);
+
+      await tap(tester, 'Reset');
+
+      expect(find.text('Status: Playing'), findsOneWidget);
+      expect(find.textContaining('Game over.'), findsNothing);
+      expect(find.bySemanticsLabel('Happiness: 50 out of 100'), findsOneWidget);
+      expect(find.bySemanticsLabel('Hunger: 50 out of 100'), findsOneWidget);
+
+      // Actions work again and the hunger timer is running again.
+      await tap(tester, 'Play');
+      expect(find.bySemanticsLabel('Happiness: 60 out of 100'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 30));
+      expect(find.bySemanticsLabel('Hunger: 60 out of 100'), findsOneWidget);
+    });
+
+    testWidgets('Reset keeps the pet name', (tester) async {
+      await tester.pumpWidget(const DigitalPetApp());
+      await tester.enterText(find.byType(TextField), 'Mochi');
+      await tap(tester, 'Confirm');
+
+      await tap(tester, 'Reset');
+      expect(find.text('Mochi'), findsOneWidget);
+    });
+
+    testWidgets('Reset cancels a running win countdown', (tester) async {
+      await tester.pumpWidget(const DigitalPetApp());
+      await tap(tester, 'Play', 4); // happiness 90 -> countdown starts
+      await tester.pump(const Duration(minutes: 2));
+
+      await tap(tester, 'Reset');
+      // Old countdown would have finished 1 minute from now.
+      await tester.pump(const Duration(minutes: 2));
+      expect(find.text('Status: Playing'), findsOneWidget);
+    });
+
+    testWidgets('Reset leaves exactly one hunger timer, restarted fresh',
+        (tester) async {
+      await tester.pumpWidget(const DigitalPetApp());
+      await tester.pump(const Duration(seconds: 20));
+
+      await tap(tester, 'Reset');
+
+      // Old timer (due at 30s) was cancelled: nothing at the old tick time.
+      await tester.pump(const Duration(seconds: 10));
+      expect(find.bySemanticsLabel('Hunger: 50 out of 100'), findsOneWidget);
+
+      // New timer ticks 30s after reset, once (+5, not +10).
+      await tester.pump(const Duration(seconds: 20));
+      expect(find.bySemanticsLabel('Hunger: 55 out of 100'), findsOneWidget);
+    });
+  });
+
   testWidgets('Meters and mood expose accessible labels', (tester) async {
     final handle = tester.ensureSemantics();
     await tester.pumpWidget(const DigitalPetApp());
