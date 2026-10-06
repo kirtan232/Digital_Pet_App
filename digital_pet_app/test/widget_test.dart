@@ -34,15 +34,13 @@ void main() {
     expect(find.text('Status: Playing'), findsOneWidget);
   });
 
-  testWidgets('Pet image is tinted with the neutral mood color', (
-    tester,
-  ) async {
+  testWidgets('Neutral pet image keeps its natural colors', (tester) async {
     await pumpApp(tester);
 
     final filtered = tester.widget<ColorFiltered>(find.byType(ColorFiltered));
     expect(
       filtered.colorFilter,
-      const ColorFilter.mode(Colors.yellow, BlendMode.modulate),
+      const ColorFilter.mode(Colors.white, BlendMode.modulate),
     );
     expect(find.byType(Image), findsOneWidget);
   });
@@ -438,16 +436,18 @@ void main() {
               const ColorFilter.mode(Colors.green, BlendMode.modulate)
           ? Colors.green
           : filtered.colorFilter ==
-                const ColorFilter.mode(Colors.yellow, BlendMode.modulate)
-          ? Colors.yellow
+                const ColorFilter.mode(Colors.white, BlendMode.modulate)
+          ? Colors.white
           : Colors.red;
     }
 
-    testWidgets('Happiness exactly 70 is still Neutral/yellow', (tester) async {
+    testWidgets('Happiness exactly 70 is still Neutral, untinted', (
+      tester,
+    ) async {
       await pumpApp(tester);
       await tap(tester, 'Play', 2); // happiness 70
       expect(find.text('Neutral'), findsOneWidget);
-      expect(tint(tester), Colors.yellow);
+      expect(tint(tester), Colors.white);
     });
 
     testWidgets('Happiness below 30 is Unhappy/red', (tester) async {

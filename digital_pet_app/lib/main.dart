@@ -243,6 +243,14 @@ class _DigitalPetScreenState extends State<DigitalPetScreen> {
     return Colors.red;
   }
 
+  /// Tint for the pet image. Neutral uses white, which BlendMode.modulate
+  /// leaves unchanged, so the pet shows its natural colors.
+  Color get _petTint {
+    if (_happiness > 70) return Colors.green;
+    if (_happiness >= 30) return Colors.white;
+    return Colors.red;
+  }
+
   IconData get _moodIcon {
     if (_happiness > 70) return Icons.sentiment_very_satisfied;
     if (_happiness >= 30) return Icons.sentiment_neutral;
@@ -327,9 +335,9 @@ class _DigitalPetScreenState extends State<DigitalPetScreen> {
       label: '$_petName looks ${_moodLabel.toLowerCase()}',
       image: true,
       child: ColorFiltered(
-        colorFilter: ColorFilter.mode(_moodColor, BlendMode.modulate),
+        colorFilter: ColorFilter.mode(_petTint, BlendMode.modulate),
         child: Image.asset(
-          'assets/images/pet.png',
+          'assets/images/cute_cat.png',
           width: 180,
           height: 180,
           fit: BoxFit.contain,
