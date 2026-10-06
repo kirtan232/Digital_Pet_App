@@ -1,4 +1,4 @@
-# Digital Pet — In-Class Activity 07
+# Digital Pet, In-Class Activity 07
 
 A Flutter pet-care app that turns user actions and time into visible state changes, built with `StatefulWidget`, `setState()`, and lifecycle-aware timers. Two teams co-build one app in this repository:
 
