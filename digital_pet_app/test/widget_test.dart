@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:digital_pet_app/main.dart';
@@ -14,9 +15,21 @@ void main() {
     await tester.pumpWidget(const DigitalPetApp());
 
     expect(find.text('Pip'), findsOneWidget);
-    expect(find.text('Mood: Neutral'), findsOneWidget);
-    expect(find.text('Happiness: 50'), findsOneWidget);
-    expect(find.text('Hunger: 50'), findsOneWidget);
+    expect(find.text('Neutral'), findsOneWidget);
+    expect(find.text('Happiness'), findsOneWidget);
+    expect(find.text('Hunger'), findsOneWidget);
+    expect(find.text('50 / 100'), findsNWidgets(2));
+    expect(find.byType(LinearProgressIndicator), findsNWidgets(2));
     expect(find.text('Status: Playing'), findsOneWidget);
+  });
+
+  testWidgets('Meters and mood expose accessible labels', (tester) async {
+    final handle = tester.ensureSemantics();
+    await tester.pumpWidget(const DigitalPetApp());
+
+    expect(find.bySemanticsLabel('Mood: Neutral'), findsOneWidget);
+    expect(find.bySemanticsLabel('Happiness: 50 out of 100'), findsOneWidget);
+    expect(find.bySemanticsLabel('Hunger: 50 out of 100'), findsOneWidget);
+    handle.dispose();
   });
 }
