@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 void main() {
@@ -32,6 +34,10 @@ class _DigitalPetScreenState extends State<DigitalPetScreen> {
   static const int initialHappiness = 50;
   static const int initialHunger = 50;
 
+  // How often hunger grows. Shorten (e.g. 5 seconds) only while testing by
+  // hand; it must be 30 seconds for submission.
+  static const Duration hungerTickInterval = Duration(seconds: 30);
+
   // Pet state: the single source of truth for everything the UI shows.
   String _petName = initialName;
   int _happiness = initialHappiness;
@@ -42,10 +48,47 @@ class _DigitalPetScreenState extends State<DigitalPetScreen> {
   // Owned by this State object, so it must be disposed in dispose().
   final TextEditingController _nameController = TextEditingController();
 
+  // The single periodic hunger timer. Created in initState, never in build.
+  Timer? _hungerTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _startHungerTimer();
+  }
+
   @override
   void dispose() {
+    _hungerTimer?.cancel();
     _nameController.dispose();
     super.dispose();
+  }
+
+  /// Cancels any old hunger timer first, so exactly one is ever running.
+  void _startHungerTimer() {
+    _hungerTimer?.cancel();
+    _hungerTimer = Timer.periodic(hungerTickInterval, (_) => _onHungerTick());
+  }
+
+  /// Hunger +5 per tick. A tick that reaches 100 (e.g. 95 -> 100) costs
+  /// nothing extra; once hunger is already maxed, each further tick keeps it
+  /// at 100 and costs 20 happiness instead.
+  void _onHungerTick() {
+    if (!mounted) return;
+    if (!_canCare) {
+      _hungerTimer?.cancel();
+      return;
+    }
+
+    setState(() {
+      if (_hunger + 5 > 100) {
+        _hunger = 100;
+        _happiness = _clampMeter(_happiness - 20);
+      } else {
+        _hunger += 5;
+      }
+    });
+    _updateOutcome();
   }
 
   /// Confirms the typed name. Blank input is ignored so the pet always has a

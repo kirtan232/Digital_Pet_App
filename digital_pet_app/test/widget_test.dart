@@ -120,6 +120,52 @@ void main() {
     });
   });
 
+  group('Hunger timer', () {
+    // Widget tests run on fake time, so pump(duration) fires timers instantly.
+    const tick = Duration(seconds: 30);
+
+    testWidgets('Hunger rises by 5 every 30 seconds', (tester) async {
+      await tester.pumpWidget(const DigitalPetApp());
+
+      await tester.pump(const Duration(seconds: 29));
+      expect(find.bySemanticsLabel('Hunger: 50 out of 100'), findsOneWidget);
+
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.bySemanticsLabel('Hunger: 55 out of 100'), findsOneWidget);
+
+      await tester.pump(tick);
+      expect(find.bySemanticsLabel('Hunger: 60 out of 100'), findsOneWidget);
+    });
+
+    testWidgets('Reaching 100 is free; ticks past 100 cost 20 happiness',
+        (tester) async {
+      await tester.pumpWidget(const DigitalPetApp());
+
+      // 10 ticks: 50 -> 100. The 95 -> 100 tick does not reduce happiness.
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(tick);
+      }
+      expect(find.bySemanticsLabel('Hunger: 100 out of 100'), findsOneWidget);
+      expect(find.bySemanticsLabel('Happiness: 50 out of 100'), findsOneWidget);
+
+      // Next tick would overflow: hunger stays 100, happiness 50 -> 30.
+      await tester.pump(tick);
+      expect(find.bySemanticsLabel('Hunger: 100 out of 100'), findsOneWidget);
+      expect(find.bySemanticsLabel('Happiness: 30 out of 100'), findsOneWidget);
+    });
+
+    testWidgets('Disposing the screen cancels the hunger timer',
+        (tester) async {
+      await tester.pumpWidget(const DigitalPetApp());
+      await tester.pumpWidget(const SizedBox());
+
+      // If the timer were still alive it would call setState on an unmounted
+      // State, or the test framework would report a pending timer.
+      await tester.pump(tick * 3);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
   testWidgets('Meters and mood expose accessible labels', (tester) async {
     final handle = tester.ensureSemantics();
     await tester.pumpWidget(const DigitalPetApp());
