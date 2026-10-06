@@ -34,7 +34,9 @@ void main() {
     expect(find.text('Status: Playing'), findsOneWidget);
   });
 
-  testWidgets('Pet image is tinted with the neutral mood color', (tester) async {
+  testWidgets('Pet image is tinted with the neutral mood color', (
+    tester,
+  ) async {
     await pumpApp(tester);
 
     final filtered = tester.widget<ColorFiltered>(find.byType(ColorFiltered));
@@ -83,8 +85,9 @@ void main() {
       expect(find.bySemanticsLabel('Hunger: 55 out of 100'), findsOneWidget);
     });
 
-    testWidgets('Feed lowers hunger by 10 and raises happiness by 10',
-        (tester) async {
+    testWidgets('Feed lowers hunger by 10 and raises happiness by 10', (
+      tester,
+    ) async {
       await pumpApp(tester);
 
       await tapTimes(tester, 'Feed', 1);
@@ -93,8 +96,9 @@ void main() {
       expect(find.bySemanticsLabel('Happiness: 60 out of 100'), findsOneWidget);
     });
 
-    testWidgets('Overfeeding (hunger below 30) costs 20 happiness',
-        (tester) async {
+    testWidgets('Overfeeding (hunger below 30) costs 20 happiness', (
+      tester,
+    ) async {
       await pumpApp(tester);
 
       // 50 -> 40 -> 30 (happiness +10, +10), then 30 -> 20 is overfed (-20).
@@ -112,7 +116,10 @@ void main() {
       await tapTimes(tester, 'Play', 3);
       await tapTimes(tester, 'Rest', 1);
       await tapTimes(tester, 'Play', 3);
-      expect(find.bySemanticsLabel('Happiness: 100 out of 100'), findsOneWidget);
+      expect(
+        find.bySemanticsLabel('Happiness: 100 out of 100'),
+        findsOneWidget,
+      );
       expect(find.bySemanticsLabel('Hunger: 85 out of 100'), findsOneWidget);
 
       // Feed 10x: hunger 85 -> 0 (clamped), never negative.
@@ -156,8 +163,9 @@ void main() {
       expect(find.bySemanticsLabel('Hunger: 60 out of 100'), findsOneWidget);
     });
 
-    testWidgets('Reaching 100 is free; ticks past 100 cost 20 happiness',
-        (tester) async {
+    testWidgets('Reaching 100 is free; ticks past 100 cost 20 happiness', (
+      tester,
+    ) async {
       await pumpApp(tester);
 
       // 10 ticks: 50 -> 100. The 95 -> 100 tick does not reduce happiness.
@@ -173,8 +181,9 @@ void main() {
       expect(find.bySemanticsLabel('Happiness: 30 out of 100'), findsOneWidget);
     });
 
-    testWidgets('Disposing the screen cancels the hunger timer',
-        (tester) async {
+    testWidgets('Disposing the screen cancels the hunger timer', (
+      tester,
+    ) async {
       await pumpApp(tester);
       await tester.pumpWidget(const SizedBox());
 
@@ -194,15 +203,18 @@ void main() {
     }
 
     bool isEnabled(WidgetTester tester, String label) {
-      final button = tester.widget<ButtonStyleButton>(find.ancestor(
-        of: find.text(label),
-        matching: find.byWidgetPredicate((w) => w is ButtonStyleButton),
-      ));
+      final button = tester.widget<ButtonStyleButton>(
+        find.ancestor(
+          of: find.text(label),
+          matching: find.byWidgetPredicate((w) => w is ButtonStyleButton),
+        ),
+      );
       return button.onPressed != null;
     }
 
-    testWidgets('Win after 3 minutes above 80, then actions lock',
-        (tester) async {
+    testWidgets('Win after 3 minutes above 80, then actions lock', (
+      tester,
+    ) async {
       await pumpApp(tester);
       await tap(tester, 'Play', 4); // happiness 90, hunger 70
 
@@ -216,8 +228,9 @@ void main() {
       expect(isEnabled(tester, 'Play'), isFalse);
     });
 
-    testWidgets('Exactly 80 happiness never starts the win timer',
-        (tester) async {
+    testWidgets('Exactly 80 happiness never starts the win timer', (
+      tester,
+    ) async {
       await pumpApp(tester);
       await tap(tester, 'Play', 3); // happiness exactly 80
 
@@ -225,28 +238,34 @@ void main() {
       expect(find.text('Status: Playing'), findsOneWidget);
     });
 
-    testWidgets('Dropping to 80 cancels the countdown; next crossing restarts',
-        (tester) async {
-      await pumpApp(tester);
-      await tap(tester, 'Feed', 3); // hunger 20, happiness 50
-      await tap(tester, 'Play', 4); // happiness 90 -> countdown starts at 0s
+    testWidgets(
+      'Dropping to 80 cancels the countdown; next crossing restarts',
+      (tester) async {
+        await pumpApp(tester);
+        await tap(tester, 'Feed', 3); // hunger 20, happiness 50
+        await tap(tester, 'Play', 4); // happiness 90 -> countdown starts at 0s
 
-      await tester.pump(const Duration(minutes: 1)); // hunger 50
-      await tap(tester, 'Feed', 3); // last feed overfeeds: happiness 80
-      expect(find.bySemanticsLabel('Happiness: 80 out of 100'), findsOneWidget);
+        await tester.pump(const Duration(minutes: 1)); // hunger 50
+        await tap(tester, 'Feed', 3); // last feed overfeeds: happiness 80
+        expect(
+          find.bySemanticsLabel('Happiness: 80 out of 100'),
+          findsOneWidget,
+        );
 
-      await tap(tester, 'Play'); // happiness 90 -> fresh countdown at 60s
+        await tap(tester, 'Play'); // happiness 90 -> fresh countdown at 60s
 
-      // The cancelled countdown would have finished at 180s.
-      await tester.pump(const Duration(seconds: 150)); // now 210s
-      expect(find.text('Status: Playing'), findsOneWidget);
+        // The cancelled countdown would have finished at 180s.
+        await tester.pump(const Duration(seconds: 150)); // now 210s
+        expect(find.text('Status: Playing'), findsOneWidget);
 
-      await tester.pump(const Duration(seconds: 30)); // now 240s = 60s + 3min
-      expect(find.text('Status: You won!'), findsOneWidget);
-    });
+        await tester.pump(const Duration(seconds: 30)); // now 240s = 60s + 3min
+        expect(find.text('Status: You won!'), findsOneWidget);
+      },
+    );
 
-    testWidgets('Loss when hunger is 100 and happiness is 10 or lower',
-        (tester) async {
+    testWidgets('Loss when hunger is 100 and happiness is 10 or lower', (
+      tester,
+    ) async {
       await pumpApp(tester);
 
       // 10 ticks -> hunger 100; 2 more ticks -> happiness 50 -> 30 -> 10.
@@ -270,8 +289,9 @@ void main() {
       }
     }
 
-    testWidgets('Reset after game over restores meters and unlocks actions',
-        (tester) async {
+    testWidgets('Reset after game over restores meters and unlocks actions', (
+      tester,
+    ) async {
       await pumpApp(tester);
       await tester.pump(const Duration(seconds: 30 * 12)); // loss
       expect(find.text('Status: Game over'), findsOneWidget);
@@ -310,8 +330,9 @@ void main() {
       expect(find.text('Status: Playing'), findsOneWidget);
     });
 
-    testWidgets('Reset leaves exactly one hunger timer, restarted fresh',
-        (tester) async {
+    testWidgets('Reset leaves exactly one hunger timer, restarted fresh', (
+      tester,
+    ) async {
       await pumpApp(tester);
       await tester.pump(const Duration(seconds: 20));
 
@@ -336,10 +357,12 @@ void main() {
     }
 
     bool isEnabled(WidgetTester tester, String label) {
-      final button = tester.widget<ButtonStyleButton>(find.ancestor(
-        of: find.text(label),
-        matching: find.byWidgetPredicate((w) => w is ButtonStyleButton),
-      ));
+      final button = tester.widget<ButtonStyleButton>(
+        find.ancestor(
+          of: find.text(label),
+          matching: find.byWidgetPredicate((w) => w is ButtonStyleButton),
+        ),
+      );
       return button.onPressed != null;
     }
 
@@ -369,8 +392,9 @@ void main() {
       expect(find.bySemanticsLabel('Energy: 75 out of 100'), findsOneWidget);
     });
 
-    testWidgets('Play is disabled below 15 energy until the pet rests',
-        (tester) async {
+    testWidgets('Play is disabled below 15 energy until the pet rests', (
+      tester,
+    ) async {
       await pumpApp(tester);
       await tap(tester, 'Play', 4); // energy 70 -> 10
 
@@ -397,6 +421,83 @@ void main() {
       await tap(tester, 'Play', 3);
       await tap(tester, 'Reset');
       expect(find.bySemanticsLabel('Energy: 70 out of 100'), findsOneWidget);
+    });
+  });
+
+  group('Edge cases', () {
+    Future<void> tap(WidgetTester tester, String label, [int times = 1]) async {
+      for (var i = 0; i < times; i++) {
+        await tester.tap(find.text(label));
+        await tester.pump();
+      }
+    }
+
+    Color tint(WidgetTester tester) {
+      final filtered = tester.widget<ColorFiltered>(find.byType(ColorFiltered));
+      return filtered.colorFilter ==
+              const ColorFilter.mode(Colors.green, BlendMode.modulate)
+          ? Colors.green
+          : filtered.colorFilter ==
+                const ColorFilter.mode(Colors.yellow, BlendMode.modulate)
+          ? Colors.yellow
+          : Colors.red;
+    }
+
+    testWidgets('Happiness exactly 70 is still Neutral/yellow', (tester) async {
+      await pumpApp(tester);
+      await tap(tester, 'Play', 2); // happiness 70
+      expect(find.text('Neutral'), findsOneWidget);
+      expect(tint(tester), Colors.yellow);
+    });
+
+    testWidgets('Happiness below 30 is Unhappy/red', (tester) async {
+      await pumpApp(tester);
+      // Feeds: 40/60, 30/70, overfed 20/50, 10/30, 0/10 (hunger/happiness).
+      await tap(tester, 'Feed', 5);
+      expect(find.bySemanticsLabel('Happiness: 10 out of 100'), findsOneWidget);
+      expect(find.text('Unhappy'), findsOneWidget);
+      expect(tint(tester), Colors.red);
+      // Hunger is 0, so this is not a loss.
+      expect(find.text('Status: Playing'), findsOneWidget);
+    });
+
+    testWidgets('Actions while above 80 do not restart the win countdown', (
+      tester,
+    ) async {
+      await pumpApp(tester);
+      await tap(tester, 'Play', 4); // happiness 90 -> countdown starts at 0s
+
+      await tester.pump(const Duration(minutes: 2));
+      await tap(tester, 'Feed'); // happiness 100, still above 80
+
+      // Wins at the original 3:00 mark, not 3 minutes after the feed.
+      await tester.pump(const Duration(minutes: 1));
+      expect(find.text('Status: You won!'), findsOneWidget);
+    });
+
+    testWidgets('Winning stops the hunger timer; Reset starts a new game', (
+      tester,
+    ) async {
+      await pumpApp(tester);
+      await tap(tester, 'Play', 4);
+      await tester.pump(const Duration(minutes: 3)); // win, hunger 100
+      expect(find.text('Status: You won!'), findsOneWidget);
+      expect(find.bySemanticsLabel('Hunger: 100 out of 100'), findsOneWidget);
+
+      // No more ticks: happiness would drop by 20 per tick if hunger ran.
+      await tester.pump(const Duration(minutes: 2));
+      expect(find.bySemanticsLabel('Happiness: 90 out of 100'), findsOneWidget);
+
+      await tap(tester, 'Reset');
+      expect(find.text('Status: Playing'), findsOneWidget);
+      expect(find.bySemanticsLabel('Hunger: 50 out of 100'), findsOneWidget);
+    });
+
+    testWidgets('Pet name is limited to 20 characters', (tester) async {
+      await pumpApp(tester);
+      await tester.enterText(find.byType(TextField), 'A' * 25);
+      await tap(tester, 'Confirm');
+      expect(find.text('A' * 20), findsOneWidget);
     });
   });
 
