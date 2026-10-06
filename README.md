@@ -122,7 +122,7 @@ Run `flutter test` from `digital_pet_app/`. **Result: 34 / 34 tests pass.** `flu
 - [x] Play ×3 → happiness 80, pet turns green, mood shows "Happy".
 - [x] A hunger tick fires live (+5 hunger, +5 energy).
 - [x] Neutral pet shows its natural colors.
-- [ ] Release APK installed and checked on the target device *(Step 12)*.
+- [x] Release APK (`flutter build apk --release`) installed on the emulator; launches and care actions work.
 
 ### Assets and licensing
 
